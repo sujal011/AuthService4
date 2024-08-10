@@ -1,0 +1,138 @@
+Index: src/main/java/com/springboot/expensetracker/authservice/repositories/RefreshTokenRepository.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.springboot.expensetracker.authservice.repositories;\r\n\r\nimport com.springboot.expensetracker.authservice.entities.RefreshToken;\r\nimport org.springframework.data.jpa.repository.JpaRepository;\r\nimport org.springframework.stereotype.Repository;\r\n\r\nimport java.util.Optional;\r\n\r\n@Repository\r\npublic interface RefreshTokenRepository extends JpaRepository<RefreshToken,Integer> {\r\n\r\n    Optional<RefreshToken> findByToken(String token);\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/springboot/expensetracker/authservice/repositories/RefreshTokenRepository.java b/src/main/java/com/springboot/expensetracker/authservice/repositories/RefreshTokenRepository.java
+--- a/src/main/java/com/springboot/expensetracker/authservice/repositories/RefreshTokenRepository.java	(revision 86b7122c0d278fdeaf755e0ab6a68cb9c9373004)
++++ b/src/main/java/com/springboot/expensetracker/authservice/repositories/RefreshTokenRepository.java	(date 1723318982142)
+@@ -1,6 +1,7 @@
+ package com.springboot.expensetracker.authservice.repositories;
+ 
+ import com.springboot.expensetracker.authservice.entities.RefreshToken;
++import com.springboot.expensetracker.authservice.entities.UserInfo;
+ import org.springframework.data.jpa.repository.JpaRepository;
+ import org.springframework.stereotype.Repository;
+ 
+@@ -10,5 +11,6 @@
+ public interface RefreshTokenRepository extends JpaRepository<RefreshToken,Integer> {
+ 
+     Optional<RefreshToken> findByToken(String token);
++    RefreshToken findRefreshTokenByUserInfo(UserInfo userInfo);
+ 
+ }
+Index: src/main/java/com/springboot/expensetracker/authservice/entities/RefreshToken.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.springboot.expensetracker.authservice.entities;\r\nimport com.fasterxml.jackson.databind.PropertyNamingStrategies;\r\nimport com.fasterxml.jackson.databind.annotation.JsonNaming;\r\nimport jakarta.persistence.*;\r\nimport lombok.*;\r\n\r\nimport java.time.Instant;\r\n\r\n@Entity\r\n@Table(name = \"tokens\")\r\n@Data\r\n@AllArgsConstructor\r\n@NoArgsConstructor\r\n@Builder\r\n@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)\r\npublic class RefreshToken {\r\n\r\n    @Id\r\n    @GeneratedValue( strategy = GenerationType.IDENTITY)\r\n\r\n    private int id;\r\n\r\n    private String token;\r\n\r\n    private Instant expiryDate;\r\n\r\n\r\n    @OneToOne(cascade = CascadeType.ALL)\r\n    @JoinColumn(name = \"user_info\", referencedColumnName = \"user_id\")\r\n    private UserInfo userInfo;\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/springboot/expensetracker/authservice/entities/RefreshToken.java b/src/main/java/com/springboot/expensetracker/authservice/entities/RefreshToken.java
+--- a/src/main/java/com/springboot/expensetracker/authservice/entities/RefreshToken.java	(revision 86b7122c0d278fdeaf755e0ab6a68cb9c9373004)
++++ b/src/main/java/com/springboot/expensetracker/authservice/entities/RefreshToken.java	(date 1723319494622)
+@@ -17,7 +17,6 @@
+ 
+     @Id
+     @GeneratedValue( strategy = GenerationType.IDENTITY)
+-
+     private int id;
+ 
+     private String token;
+Index: src/main/java/com/springboot/expensetracker/authservice/services/RefreshTokenService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.springboot.expensetracker.authservice.services;\r\n\r\nimport com.springboot.expensetracker.authservice.entities.RefreshToken;\r\nimport com.springboot.expensetracker.authservice.entities.UserInfo;\r\nimport com.springboot.expensetracker.authservice.repositories.RefreshTokenRepository;\r\nimport com.springboot.expensetracker.authservice.repositories.UserInfoRepository;\r\n\r\nimport org.springframework.stereotype.Service;\r\n\r\nimport java.time.Instant;\r\n\r\nimport java.util.Optional;\r\nimport java.util.UUID;\r\n\r\n@Service\r\npublic class RefreshTokenService {\r\n\r\n    private final UserInfoRepository userInfoRepository;\r\n\r\n\r\n    private final RefreshTokenRepository refreshTokenRepository;\r\n\r\n    public RefreshTokenService(UserInfoRepository userInfoRepository,RefreshTokenRepository refreshTokenRepository){\r\n        this.userInfoRepository = userInfoRepository;\r\n        this.refreshTokenRepository = refreshTokenRepository;\r\n    }\r\n\r\n    public RefreshToken createRefreshToken(String username){\r\n\r\n        UserInfo userInfo = userInfoRepository.findByUsername(username);\r\n        RefreshToken refreshToken = RefreshToken\r\n                .builder()\r\n                .userInfo(userInfo)\r\n                .token(UUID.randomUUID().toString())\r\n                .expiryDate(Instant.now().plusMillis(1000*60*60))\r\n                .build();\r\n\r\n        return refreshTokenRepository.save(refreshToken);\r\n    }\r\n\r\n    public RefreshToken verifyRefreshToken(RefreshToken refreshToken) throws Exception {\r\n        if (refreshToken.getExpiryDate().compareTo(Instant.now())<0){\r\n            throw new Exception(\"RefreshToken is Expired, Please Login Again!\");\r\n        }\r\n        return refreshToken;\r\n    }\r\n\r\n    public Optional<RefreshToken> findByToken(String token){\r\n        return refreshTokenRepository.findByToken(token);\r\n    }\r\n\r\n\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/springboot/expensetracker/authservice/services/RefreshTokenService.java b/src/main/java/com/springboot/expensetracker/authservice/services/RefreshTokenService.java
+--- a/src/main/java/com/springboot/expensetracker/authservice/services/RefreshTokenService.java	(revision 86b7122c0d278fdeaf755e0ab6a68cb9c9373004)
++++ b/src/main/java/com/springboot/expensetracker/authservice/services/RefreshTokenService.java	(date 1723319494622)
+@@ -28,14 +28,26 @@
+     public RefreshToken createRefreshToken(String username){
+ 
+         UserInfo userInfo = userInfoRepository.findByUsername(username);
+-        RefreshToken refreshToken = RefreshToken
+-                .builder()
+-                .userInfo(userInfo)
+-                .token(UUID.randomUUID().toString())
+-                .expiryDate(Instant.now().plusMillis(1000*60*60))
+-                .build();
++
++        RefreshToken refreshToken = refreshTokenRepository.findRefreshTokenByUserInfo(userInfo);
++        if(refreshToken!=null){
++//            refreshToken.setUserInfo(userInfo);
++            refreshToken.setToken(UUID.randomUUID().toString());
++            refreshToken.setExpiryDate(Instant.now().plusMillis(1000*60*60));
++
++            return refreshTokenRepository.save(refreshToken);
++        }
++        else {
++
++            RefreshToken newRefreshToken = RefreshToken
++                    .builder()
++                    .userInfo(userInfo)
++                    .token(UUID.randomUUID().toString())
++                    .expiryDate(Instant.now().plusMillis(1000 * 60 * 60))
++                    .build();
+ 
+-        return refreshTokenRepository.save(refreshToken);
++            return refreshTokenRepository.save(newRefreshToken);
++        }
+     }
+ 
+     public RefreshToken verifyRefreshToken(RefreshToken refreshToken) throws Exception {
+@@ -50,5 +62,4 @@
+     }
+ 
+ 
+-
+ }
+Index: src/main/java/com/springboot/expensetracker/authservice/controller/TokenController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.springboot.expensetracker.authservice.controller;\r\nimport com.springboot.expensetracker.authservice.entities.RefreshToken;\r\nimport com.springboot.expensetracker.authservice.entities.UserInfo;\r\nimport com.springboot.expensetracker.authservice.requests.AuthRequestDTO;\r\nimport com.springboot.expensetracker.authservice.requests.JwtResponseDTO;\r\nimport com.springboot.expensetracker.authservice.requests.RefreshTokenDTO;\r\nimport com.springboot.expensetracker.authservice.services.JwtService;\r\nimport com.springboot.expensetracker.authservice.services.RefreshTokenService;\r\nimport lombok.AllArgsConstructor;\r\nimport org.springframework.http.HttpStatus;\r\nimport org.springframework.http.ResponseEntity;\r\nimport org.springframework.security.authentication.AuthenticationManager;\r\nimport org.springframework.security.authentication.UsernamePasswordAuthenticationToken;\r\nimport org.springframework.security.core.Authentication;\r\nimport org.springframework.web.bind.annotation.PostMapping;\r\nimport org.springframework.web.bind.annotation.RequestBody;\r\nimport org.springframework.web.bind.annotation.RestController;\r\n\r\nimport java.util.Optional;\r\n\r\n@AllArgsConstructor\r\n@RestController\r\npublic class TokenController {\r\n\r\n    private AuthenticationManager authenticationManager;\r\n    private JwtService jwtService;\r\n    private RefreshTokenService refreshTokenService;\r\n\r\n    @PostMapping(\"auth/v1/login\")\r\n    public ResponseEntity Login(@RequestBody AuthRequestDTO authRequestDTO){\r\n\r\n        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(),authRequestDTO.getPassword()));\r\n        if (authentication.isAuthenticated()){\r\n            RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequestDTO.getUsername());\r\n            String jwtToken = jwtService.generateToken(authRequestDTO.getUsername());\r\n            return new ResponseEntity<>(new JwtResponseDTO(jwtToken,refreshToken.getToken()),HttpStatus.ACCEPTED);\r\n        }\r\n        else {\r\n            return new ResponseEntity<>(\"Username and Password Combo is Wrong\", HttpStatus.BAD_REQUEST);\r\n        }\r\n\r\n    }\r\n\r\n    @PostMapping(\"auth/v1/refreshToken\")\r\n    public ResponseEntity RefreshToken(@RequestBody RefreshTokenDTO refreshTokenDTO) throws Exception {\r\n\r\n        Optional<RefreshToken> refreshToken = refreshTokenService.findByToken(refreshTokenDTO.getToken());\r\ntry {\r\n    if(refreshToken.isEmpty()){\r\n        throw new Exception(\"Invalid RefreshtToken\");\r\n    }\r\n    RefreshToken refreshToken1 = refreshToken.stream().findFirst().orElse(null);\r\n    if(refreshToken1 == null){\r\n        throw new Exception(\"RefreshToken Not Found\");\r\n    }\r\n    RefreshToken refreshToken2 = refreshTokenService.verifyRefreshToken(refreshToken1);\r\n    UserInfo userInfo = refreshToken2.getUserInfo();\r\n    String jwtToken = jwtService.generateToken(userInfo.getUsername());\r\n    return new ResponseEntity<>(new JwtResponseDTO(jwtToken,refreshToken2.getToken()),HttpStatus.CREATED);\r\n\r\n}catch (Exception e){\r\n    return new ResponseEntity<>(e.getMessage(),HttpStatus.BAD_REQUEST);\r\n}\r\n    }\r\n\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/springboot/expensetracker/authservice/controller/TokenController.java b/src/main/java/com/springboot/expensetracker/authservice/controller/TokenController.java
+--- a/src/main/java/com/springboot/expensetracker/authservice/controller/TokenController.java	(revision 86b7122c0d278fdeaf755e0ab6a68cb9c9373004)
++++ b/src/main/java/com/springboot/expensetracker/authservice/controller/TokenController.java	(date 1723317651690)
+@@ -26,7 +26,7 @@
+     private JwtService jwtService;
+     private RefreshTokenService refreshTokenService;
+ 
+-    @PostMapping("auth/v1/login")
++    @PostMapping("/auth/v1/login")
+     public ResponseEntity Login(@RequestBody AuthRequestDTO authRequestDTO){
+ 
+         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(),authRequestDTO.getPassword()));
+Index: src/main/resources/application.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>spring.application.name=AuthService\r\nspring.datasource.url=jdbc:mysql://localhost:3306/authservice\r\nspring.datasource.name=AuthService\r\nspring.datasource.username=\r\nspring.datasource.password=\r\nspring.jpa.hibernate.ddl-auto=update\r\nspring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver\r\nspring.data.jdbc.dialect=mysql\r\nspring.jpa.show-sql=true\r\nserver.port=
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>ISO-8859-1
+===================================================================
+diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
+--- a/src/main/resources/application.properties	(revision 86b7122c0d278fdeaf755e0ab6a68cb9c9373004)
++++ b/src/main/resources/application.properties	(date 1723316440594)
+@@ -1,10 +1,10 @@
+ spring.application.name=AuthService
+ spring.datasource.url=jdbc:mysql://localhost:3306/authservice
+ spring.datasource.name=AuthService
+-spring.datasource.username=
+-spring.datasource.password=
++spring.datasource.username=root
++spring.datasource.password=password
+ spring.jpa.hibernate.ddl-auto=update
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ spring.data.jdbc.dialect=mysql
+ spring.jpa.show-sql=true
+-server.port=
+\ No newline at end of file
++server.port=9696
+\ No newline at end of file
