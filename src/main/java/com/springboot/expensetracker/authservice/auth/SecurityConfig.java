@@ -1,5 +1,6 @@
 package com.springboot.expensetracker.authservice.auth;
 
+import com.springboot.expensetracker.authservice.eventProducer.UserInfoProducer;
 import com.springboot.expensetracker.authservice.repositories.UserInfoRepository;
 import com.springboot.expensetracker.authservice.services.UserDetailsServiceImpl;
 import lombok.Data;
@@ -31,10 +32,13 @@ public class SecurityConfig {
 
     private UserDetailsServiceImpl userDetailsServiceImpl;
 
+    private UserInfoProducer userInfoProducer;
+
     @Bean
     @Autowired
-    public UserDetailsService userDetailsService(UserInfoRepository userInfoRepository, PasswordEncoder passwordEncoder){
-         return new UserDetailsServiceImpl(userInfoRepository,passwordEncoder);
+    public UserDetailsService userDetailsService(UserInfoRepository userInfoRepository, PasswordEncoder passwordEncoder,UserInfoProducer userInfoProducer){
+
+         return new UserDetailsServiceImpl(userInfoRepository,passwordEncoder,userInfoProducer);
     }
 
     public SecurityConfig(PasswordEncoder passwordEncoder, UserDetailsServiceImpl userDetailsServiceImpl){

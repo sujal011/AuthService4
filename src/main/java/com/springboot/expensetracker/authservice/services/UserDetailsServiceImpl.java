@@ -2,6 +2,7 @@ package com.springboot.expensetracker.authservice.services;
 
 import com.springboot.expensetracker.authservice.entities.CustomUserDetails;
 import com.springboot.expensetracker.authservice.entities.UserInfo;
+import com.springboot.expensetracker.authservice.eventProducer.UserInfoProducer;
 import com.springboot.expensetracker.authservice.models.UserInfoDTO;
 import com.springboot.expensetracker.authservice.repositories.UserInfoRepository;
 import com.springboot.expensetracker.authservice.utils.Validation;
@@ -22,9 +23,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
 
-    public UserDetailsServiceImpl(UserInfoRepository userInfoRepository, PasswordEncoder passwordEncoder) {
+    private final UserInfoProducer userInfoProducer;
+
+    public UserDetailsServiceImpl(UserInfoRepository userInfoRepository, PasswordEncoder passwordEncoder, UserInfoProducer userInfoProducer) {
         this.userInfoRepository = userInfoRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userInfoProducer = userInfoProducer;
     }
 
     @Override
@@ -63,6 +67,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         userInfoDTO.setPassword(passwordEncoder.encode(userInfoDTO.getPassword()));
 
         userInfoRepository.save(new UserInfo(userId,userInfoDTO.getUsername(),userInfoDTO.getPassword(),new HashSet<>()));
+        userInfoProducer.sendEventToKafka(userInfoDTO);
         return true;
     }
 }
