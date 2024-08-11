@@ -7,6 +7,7 @@ import com.springboot.expensetracker.authservice.repositories.UserInfoRepository
 
 import org.springframework.stereotype.Service;
 
+import javax.xml.crypto.Data;
 import java.time.Instant;
 
 import java.util.Optional;
@@ -25,17 +26,27 @@ public class RefreshTokenService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    public  boolean checkRefreshTokenExpiry(RefreshToken rToken){
+        return (Instant.now().isAfter(rToken.getExpiryDate()));
+    }
+
     public RefreshToken createRefreshToken(String username){
 
         UserInfo userInfo = userInfoRepository.findByUsername(username);
 
         RefreshToken refreshToken = refreshTokenRepository.findRefreshTokenByUserInfo(userInfo);
-        if(refreshToken!=null){
-//            refreshToken.setUserInfo(userInfo);
-            refreshToken.setToken(UUID.randomUUID().toString());
-            refreshToken.setExpiryDate(Instant.now().plusMillis(1000*60*60));
 
-            return refreshTokenRepository.save(refreshToken);
+
+
+        if(refreshToken!=null){
+            if(checkRefreshTokenExpiry(refreshToken)){
+           refreshToken.setToken(UUID.randomUUID().toString());
+            refreshToken.setExpiryDate(Instant.now().plusMillis(1000*60*60));
+                return refreshTokenRepository.save(refreshToken);
+            }
+            else {
+                return refreshToken;
+            }
         }
         else {
 

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +29,14 @@ public class TokenController {
 
     @PostMapping("/auth/v1/login")
     public ResponseEntity Login(@RequestBody AuthRequestDTO authRequestDTO){
-
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(),authRequestDTO.getPassword()));
+        Authentication authentication;
+try {
+    authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(), authRequestDTO.getPassword()));
+}
+catch (BadCredentialsException e){
+    System.out.println(e);
+    return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+}
         if (authentication.isAuthenticated()){
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequestDTO.getUsername());
             String jwtToken = jwtService.generateToken(authRequestDTO.getUsername());
